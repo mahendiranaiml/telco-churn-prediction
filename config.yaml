@@ -1,0 +1,39 @@
+data:
+  raw_path: data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+  interim_path: data/interim/cleaned_data.csv
+  train_path: data/processed/train.csv
+  test_path: data/processed/test.csv
+  feature_store_path: data/processed/feature_store.csv
+  target_column: Churn
+  test_size: 0.2
+  random_state: 42
+model:
+  type: random_forest
+  output_path: models/churn_model.pkl
+  preprocessor_path: models/preprocessor.pkl
+  label_encoder_path: models/label_encoder.pkl
+  params:
+    random_forest:
+      n_estimators: 200
+      max_depth: 8
+      min_samples_split: 2
+      min_samples_leaf: 1
+      random_state: 42
+      class_weight: balanced
+    logistic_regression:
+      max_iter: 1000
+      class_weight: balanced
+      random_state: 42
+reports:
+  metrics_path: reports/metrics.json
+  figures_dir: reports/figures
+zenml:
+  pipeline:
+    name: telco_churn_training_pipeline
+    enable_cache: false
+  artifact_store:
+    model_dir: models
+    reports_dir: reports
+mlflow:
+  tracking_uri: mlruns
+  experiment_name: telco_churn_prediction

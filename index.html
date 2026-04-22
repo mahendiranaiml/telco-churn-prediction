@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Telco Churn Prediction</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f5f7fb;
+        color: #1f2937;
+      }
+
+      main {
+        max-width: 900px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+
+      h1 {
+        margin-bottom: 6px;
+      }
+
+      p {
+        color: #667085;
+      }
+
+      form {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        padding: 16px;
+        background: white;
+        border: 1px solid #d9dee8;
+        border-radius: 8px;
+      }
+
+      label {
+        display: grid;
+        gap: 5px;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      input,
+      select,
+      button {
+        min-height: 38px;
+        font: inherit;
+      }
+
+      input,
+      select {
+        border: 1px solid #cfd6e4;
+        border-radius: 6px;
+        padding: 7px 9px;
+      }
+
+      button {
+        grid-column: 1 / -1;
+        border: 0;
+        border-radius: 6px;
+        background: #176b5d;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      #result {
+        margin-top: 16px;
+        padding: 16px;
+        background: white;
+        border: 1px solid #d9dee8;
+        border-radius: 8px;
+        font-size: 18px;
+      }
+
+      @media (max-width: 760px) {
+        form {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Telco Churn Prediction</h1>
+      <p>Fill all customer details, then click Predict.</p>
+
+      <form id="prediction-form">
+        <label>Gender<select name="gender" required><option value="">Select</option><option>Female</option><option>Male</option></select></label>
+        <label>Senior Citizen<select name="senior_citizen" required><option value="">Select</option><option value="0">No</option><option value="1">Yes</option></select></label>
+        <label>Partner<select name="partner" required><option value="">Select</option><option>Yes</option><option>No</option></select></label>
+        <label>Dependents<select name="dependents" required><option value="">Select</option><option>Yes</option><option>No</option></select></label>
+        <label>Tenure<input name="tenure" type="number" min="0" required /></label>
+        <label>Phone Service<select name="phone_service" required><option value="">Select</option><option>Yes</option><option>No</option></select></label>
+        <label>Multiple Lines<select name="multiple_lines" required><option value="">Select</option><option>Yes</option><option>No</option><option>No phone service</option></select></label>
+        <label>Internet Service<select name="internet_service" required><option value="">Select</option><option>DSL</option><option>Fiber optic</option><option>No</option></select></label>
+        <label>Online Security<select name="online_security" required><option value="">Select</option><option>Yes</option><option>No</option><option>No internet service</option></select></label>
+        <label>Online Backup<select name="online_backup" required><option value="">Select</option><option>Yes</option><option>No</option><option>No internet service</option></select></label>
+        <label>Device Protection<select name="device_protection" required><option value="">Select</option><option>Yes</option><option>No</option><option>No internet service</option></select></label>
+        <label>Tech Support<select name="tech_support" required><option value="">Select</option><option>Yes</option><option>No</option><option>No internet service</option></select></label>
+        <label>Streaming TV<select name="streaming_tv" required><option value="">Select</option><option>Yes</option><option>No</option><option>No internet service</option></select></label>
+        <label>Streaming Movies<select name="streaming_movies" required><option value="">Select</option><option>Yes</option><option>No</option><option>No internet service</option></select></label>
+        <label>Contract<select name="contract" required><option value="">Select</option><option>Month-to-month</option><option>One year</option><option>Two year</option></select></label>
+        <label>Paperless Billing<select name="paperless_billing" required><option value="">Select</option><option>Yes</option><option>No</option></select></label>
+        <label>Payment Method<select name="payment_method" required><option value="">Select</option><option>Electronic check</option><option>Mailed check</option><option>Bank transfer automatic</option><option>Credit card automatic</option></select></label>
+        <label>Monthly Charges<input name="monthly_charges" type="number" min="0" step="0.01" required /></label>
+        <label>Total Charges<input name="total_charges" type="number" min="0" step="0.01" required /></label>
+        <button type="submit">Predict</button>
+      </form>
+
+      <div id="result">Prediction will appear here.</div>
+    </main>
+
+    <script>
+      const form = document.querySelector("#prediction-form");
+      const result = document.querySelector("#result");
+
+      function buildPayload() {
+        const formData = new FormData(form);
+        const payload = {};
+
+        for (const [key, value] of formData.entries()) {
+          if (value === "") {
+            alert("Please provide all required customer information.");
+            return null;
+          }
+
+          if (["senior_citizen", "tenure"].includes(key)) {
+            payload[key] = Number.parseInt(value, 10);
+          } else if (["monthly_charges", "total_charges"].includes(key)) {
+            payload[key] = Number.parseFloat(value);
+          } else {
+            payload[key] = value;
+          }
+        }
+
+        return payload;
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = buildPayload();
+        if (!payload) return;
+
+        result.textContent = "Predicting...";
+
+        try {
+          const response = await fetch("http://127.0.0.1:8000/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || "Prediction failed");
+
+          const percent = Math.round(data.churn_probability * 100);
+          result.textContent = `Prediction: ${data.label} churn risk (${percent}%)`;
+        } catch (error) {
+          result.textContent = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>
