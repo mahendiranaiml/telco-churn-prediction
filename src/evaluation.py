@@ -121,6 +121,8 @@ class TelcoChurnEvaluator(ModelEvaluator):
             mlflow.log_param("train_rows", x_train.shape[0])
             mlflow.log_param("test_rows", x_test.shape[0])
             mlflow.log_param("feature_count", x_train.shape[1])
+            mlflow.log_param("selected_model", getattr(trained_model, "churn_model_name", "unknown"))
+            mlflow.log_param("threshold", getattr(trained_model, "churn_threshold", 0.5))
             mlflow.sklearn.log_model(trained_model, "model")
         logger.info("Logged metrics and model to MLflow.")
 

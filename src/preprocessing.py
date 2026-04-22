@@ -10,6 +10,14 @@ from zenml import step
 TARGET_COLUMN = "Churn"
 ID_COLUMN = "customerID"
 TOTAL_CHARGES_COLUMN = "TotalCharges"
+SERVICE_COLUMNS = [
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+]
 
 
 def setup_logger() -> logging.Logger:
@@ -67,6 +75,17 @@ class TelcoDataPreprocessor(DataPreprocessor):
 
         return cleaned
 
+    def simplify_service_values(self, data: pd.DataFrame) -> pd.DataFrame:
+        cleaned = data.copy()
+        cleaned = cleaned.replace(
+            {
+                "No internet service": "No",
+                "No phone service": "No",
+            }
+        )
+        logger.info("Simplified service values for no internet/phone service.")
+        return cleaned
+
     def remove_duplicates(self, data: pd.DataFrame) -> pd.DataFrame:
         duplicate_count = data.duplicated().sum()
         if duplicate_count:
@@ -78,14 +97,22 @@ class TelcoDataPreprocessor(DataPreprocessor):
         featured = data.copy()
         tenure = featured["tenure"].replace(0, 1)
         featured["avg_monthly_spend"] = featured[TOTAL_CHARGES_COLUMN] / tenure
+        featured["avg_charge"] = featured[TOTAL_CHARGES_COLUMN] / (featured["tenure"] + 1)
         featured["is_month_to_month"] = (featured["Contract"] == "Month-to-month").astype(int)
-        logger.info("Added engineered features: avg_monthly_spend, is_month_to_month")
+        featured["tenure_group"] = pd.cut(
+            featured["tenure"],
+            bins=[-1, 12, 24, 48, 72],
+            labels=["0-1yr", "1-2yr", "2-4yr", "4-6yr"],
+        ).astype(str)
+        featured["num_services"] = featured[SERVICE_COLUMNS].eq("Yes").sum(axis=1)
+        logger.info("Added engineered features: tenure_group, avg_charge, num_services.")
         return featured
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         self.validate_input_data(data)
         data = self.drop_customer_id(data)
         data = self.clean_total_charges(data)
+        data = self.simplify_service_values(data)
         data = self.remove_duplicates(data)
         data = self.add_features(data)
         logger.info("Preprocessing completed with %s rows and %s columns.", data.shape[0], data.shape[1])
@@ -110,10 +137,27 @@ class TelcoDataPreprocessor(DataPreprocessor):
         transformed = payload.copy()
         total_charges = float(transformed[TOTAL_CHARGES_COLUMN])
         tenure = int(transformed.get("tenure", 0)) or 1
+
+        for column in SERVICE_COLUMNS + ["MultipleLines"]:
+            if transformed.get(column) in {"No internet service", "No phone service"}:
+                transformed[column] = "No"
+
         transformed[TOTAL_CHARGES_COLUMN] = total_charges
         transformed["avg_monthly_spend"] = total_charges / tenure
+        transformed["avg_charge"] = total_charges / (tenure + 1)
         transformed["is_month_to_month"] = int(transformed["Contract"] == "Month-to-month")
+        transformed["tenure_group"] = self.get_tenure_group(tenure)
+        transformed["num_services"] = sum(1 for column in SERVICE_COLUMNS if transformed.get(column) == "Yes")
         return transformed
+
+    def get_tenure_group(self, tenure: int) -> str:
+        if tenure <= 12:
+            return "0-1yr"
+        if tenure <= 24:
+            return "1-2yr"
+        if tenure <= 48:
+            return "2-4yr"
+        return "4-6yr"
 
 
 @step
@@ -122,6 +166,7 @@ def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
     preprocessor.validate_input_data(data)
     data = preprocessor.drop_customer_id(data)
     data = preprocessor.clean_total_charges(data)
+    data = preprocessor.simplify_service_values(data)
     data = preprocessor.remove_duplicates(data)
     data = preprocessor.add_features(data)
     logger.info("Preprocessing step completed with %s rows and %s columns.", data.shape[0], data.shape[1])

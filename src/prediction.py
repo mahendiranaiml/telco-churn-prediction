@@ -60,7 +60,12 @@ class TelcoChurnPredictor(ModelPredictor):
             raise ValueError("y_test is empty")
 
     def predict_test_data(self, model: Pipeline, x_test: pd.DataFrame) -> pd.Series:
-        predictions = model.predict(x_test)
+        if hasattr(model, "predict_proba"):
+            threshold = getattr(model, "churn_threshold", 0.5)
+            predictions = (model.predict_proba(x_test)[:, 1] >= threshold).astype(int)
+            logger.info("Using prediction threshold %.2f.", threshold)
+        else:
+            predictions = model.predict(x_test)
         logger.info("Created predictions for %s test rows.", len(predictions))
         return pd.Series(predictions, index=x_test.index, name="prediction")
 

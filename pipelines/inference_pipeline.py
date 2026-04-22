@@ -23,12 +23,14 @@ def prepare_input(payload: dict) -> pd.DataFrame:
 
 def make_prediction(model, input_data: pd.DataFrame) -> dict:
     probability = float(model.predict_proba(input_data)[:, 1][0])
-    prediction = int(probability >= 0.5)
+    threshold = getattr(model, "churn_threshold", 0.5)
+    prediction = int(probability >= threshold)
 
     return {
         "prediction": prediction,
         "label": "Yes" if prediction == 1 else "No",
         "churn_probability": probability,
+        "threshold": threshold,
     }
 
 
