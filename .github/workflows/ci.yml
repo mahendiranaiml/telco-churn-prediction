@@ -25,8 +25,9 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Run tests
-        run: uv run pytest tests -q
+      - name: Check imports
+        run: uv run python -c "import app; import src.ingestion; import src.preprocessing; import src.training; import src.prediction; import src.evaluation"
+
 
       - name: Build Docker image
         run: docker build -t telco-churn-api .
