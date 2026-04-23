@@ -264,13 +264,13 @@ I built a Docker image for the FastAPI app.
 Build:
 
 ```bash
-docker build -t telco-churn-api .
+docker build -t telco-churn-api1 .
 ```
 
 Run:
 
 ```bash
-docker run -p 8000:8000 telco-churn-api
+docker run -p 8000:8000 telco-churn-api1
 ```
 
 `GitHub Actions`
