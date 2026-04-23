@@ -53,7 +53,7 @@ def home():
 @app.post("/predict")
 def predict_churn(request: ChurnPredictionRequest) -> dict:
     try:
-        payload = request.model_dump(by_alias=False)
-        return inference_pipeline(payload)
+        customer_data = request.model_dump(by_alias=False)
+        return inference_pipeline(customer_data)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

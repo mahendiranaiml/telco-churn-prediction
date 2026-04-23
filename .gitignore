@@ -15,9 +15,9 @@ logs/*.log
 logs/
 models/*.pkl
 reports/figures/*.png
-data/interim/*.csv
+data/clean/*.csv
 data/processed/*.csv
-!data/interim/.gitkeep
+!data/clean/.gitkeep
 !data/processed/.gitkeep
 !models/.gitkeep
 !reports/figures/.gitkeep

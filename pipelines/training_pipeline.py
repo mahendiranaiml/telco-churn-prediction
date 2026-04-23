@@ -8,7 +8,7 @@ from src.training import train_model
 
 
 @pipeline
-def training_pipeline(data_path: str = "data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv") -> dict:
+def training_pipeline(data_path: str = "data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv"):
     raw_data = ingest_data(data_path)
     processed_data = preprocess_data(raw_data)
     x_train, x_test, y_train, y_test, trained_model = train_model(processed_data)
@@ -19,7 +19,7 @@ def training_pipeline(data_path: str = "data/raw/WA_Fn-UseC_-Telco-Customer-Chur
         y_test,
         trained_model,
     )
-    evaluation_results = evaluate_model(
+    return evaluate_model(
         x_train,
         x_test,
         y_train,
@@ -28,7 +28,6 @@ def training_pipeline(data_path: str = "data/raw/WA_Fn-UseC_-Telco-Customer-Chur
         y_pred_proba,
         trained_model,
     )
-    return evaluation_results
 
 
 if __name__ == "__main__":

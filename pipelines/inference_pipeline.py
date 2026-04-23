@@ -3,22 +3,23 @@ from pathlib import Path
 import joblib
 import pandas as pd
 
-from src.preprocessing import TelcoDataPreprocessor
+from src.preprocessing import TelcoDataPreprocessing
 
 
 MODEL_PATH = Path("models/churn_model.pkl")
 
 
-def load_model(model_path: str | Path = MODEL_PATH):
+def load_model(model_path: str = str(MODEL_PATH)):
     model_path = Path(model_path)
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found: {model_path}")
     return joblib.load(model_path)
 
 
-def prepare_input(payload: dict) -> pd.DataFrame:
-    prepared_payload = TelcoDataPreprocessor().preprocess_payload(payload)
-    return pd.DataFrame([prepared_payload])
+def prepare_input(customer_data: dict) -> pd.DataFrame:
+    preprocessing = TelcoDataPreprocessing()
+    prepared_customer_data = preprocessing.prepare_customer_data(customer_data)
+    return pd.DataFrame([prepared_customer_data])
 
 
 def make_prediction(model, input_data: pd.DataFrame) -> dict:
@@ -34,7 +35,7 @@ def make_prediction(model, input_data: pd.DataFrame) -> dict:
     }
 
 
-def inference_pipeline(payload: dict) -> dict:
+def inference_pipeline(customer_data: dict) -> dict:
     model = load_model()
-    input_data = prepare_input(payload)
+    input_data = prepare_input(customer_data)
     return make_prediction(model, input_data)
